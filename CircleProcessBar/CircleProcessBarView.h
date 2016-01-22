@@ -10,6 +10,7 @@
 
 @interface CircleProcessBarView : UIView
 
+@property (nonatomic, assign) CGFloat percentage;
 - (void) animate;
 
 @end

@@ -24,6 +24,7 @@
 {
     NSMutableArray<CAGradientLayer *> *layers;
     CAShapeLayer * oval;
+    BOOL autoAnimate;
 }
 
 - (instancetype) initWithCoder:(NSCoder *)aDecoder
@@ -89,25 +90,55 @@
 
 - (void) animate
 {
-    for (int i=0; i<GradientLayerCount; i++) {
-        CABasicAnimation *loc_ani = [CABasicAnimation animationWithKeyPath:@"locations"];
-        loc_ani.toValue = @[@(-i), @(GradientLayerCount-i)];
-        loc_ani.duration = GradientLayerCount-i;
-        loc_ani.beginTime = CACurrentMediaTime()+1.f*i;
-        loc_ani.fillMode = kCAFillModeForwards;
-        loc_ani.removedOnCompletion = NO;
+    self.layer.speed = 1;
+    [self resetAnimationWithAutoAni:YES];
+}
+
+- (void) setPercentage:(CGFloat)percentage
+{
+    if (_percentage != percentage) {
+        _percentage = percentage;
         
-        [layers[i] addAnimation:loc_ani forKey:@"groupAnimation"];
+        self.layer.speed = 0;
+        [self resetAnimationWithAutoAni:NO];
+        
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            self.layer.timeOffset = GradientLayerCount*percentage;
+        });
     }
-    
-    CAKeyframeAnimation * ovalStrokeEndAnim = [CAKeyframeAnimation animationWithKeyPath:@"strokeStart"];
-    ovalStrokeEndAnim.values   = @[@0, @1];
-    ovalStrokeEndAnim.keyTimes = @[@0, @1];
-    ovalStrokeEndAnim.duration = GradientLayerCount;
-    ovalStrokeEndAnim.fillMode = kCAFillModeForwards;
-    ovalStrokeEndAnim.removedOnCompletion = NO;
-    
-    [oval addAnimation:ovalStrokeEndAnim forKey:@"ovalStrokeEndAnim"];
+}
+
+- (void) resetAnimationWithAutoAni:(BOOL)autoAni
+{
+    if (autoAni || autoAnimate != autoAni) {
+        for (int i=0; i<GradientLayerCount; i++) {
+            CABasicAnimation *loc_ani = [CABasicAnimation animationWithKeyPath:@"locations"];
+            loc_ani.toValue = @[@(-i), @(GradientLayerCount-i)];
+            loc_ani.duration = GradientLayerCount-i;
+            loc_ani.beginTime = autoAni?(CACurrentMediaTime()+1.f*i):(1.f*i);
+            loc_ani.fillMode = kCAFillModeForwards;
+            loc_ani.removedOnCompletion = NO;
+            
+            if (!autoAnimate || autoAni) {
+                [layers[i] removeAnimationForKey:@"groupAnimation"];
+            }
+            [layers[i] addAnimation:loc_ani forKey:@"groupAnimation"];
+        }
+        
+        CAKeyframeAnimation * ovalStrokeEndAnim = [CAKeyframeAnimation animationWithKeyPath:@"strokeStart"];
+        ovalStrokeEndAnim.values   = @[@0, @1];
+        ovalStrokeEndAnim.keyTimes = @[@0, @1];
+        ovalStrokeEndAnim.duration = GradientLayerCount;
+        ovalStrokeEndAnim.fillMode = kCAFillModeForwards;
+        ovalStrokeEndAnim.removedOnCompletion = NO;
+        
+        if (!autoAnimate || autoAni) {
+            [oval removeAnimationForKey:@"ovalStrokeEndAnim"];
+        }
+        [oval addAnimation:ovalStrokeEndAnim forKey:@"ovalStrokeEndAnim"];
+        
+        autoAnimate = autoAni;
+    }
 }
 
 @end

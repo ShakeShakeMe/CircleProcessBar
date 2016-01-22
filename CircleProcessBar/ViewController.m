@@ -11,6 +11,7 @@
 
 @interface ViewController ()
 @property (weak, nonatomic) IBOutlet CircleProcessBarView *containerView;
+@property (weak, nonatomic) IBOutlet UISlider *slider;
 
 @end
 
@@ -22,6 +23,11 @@
 }
 - (IBAction)animate:(id)sender {
     [self.containerView animate];
+    _slider.value = 0;
+}
+- (IBAction)sliderValueChanged:(id)sender {
+    UISlider *slider = (UISlider *)sender;
+    self.containerView.percentage = slider.value;
 }
 
 - (void)didReceiveMemoryWarning {
